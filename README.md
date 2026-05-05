@@ -224,31 +224,6 @@ O objetivo não é transformar este protótipo em um sistema profissional comple
 
 ---
 
-## 9. Como executar localmente
-
-Como o projeto é estático, há duas formas simples de execução.
-
-### Opção 1 — Abrir diretamente no navegador
-
-Basta abrir o arquivo:
-
-```text
-index.html
-```
-
-### Opção 2 — Usar um servidor local simples
-
-Na pasta do projeto, execute:
-
-```bash
-python -m http.server 8000
-```
-
-Depois acesse:
-
-```text
-http://localhost:8000
-```
 
 ## 11. Usuários de demonstração
 
