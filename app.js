@@ -184,6 +184,25 @@ function showApp(user) {
   currentUserDetails.textContent = `${user.email} | Perfil: ${user.role}`;
   roleSelect.value = user.role;
 
+  // Controle de acesso visual para botões sensíveis
+  const adminOnlyElements = [exportBtn, clearLogsBtn, resetBtn, roleSelect.closest('.role-switch')];
+  if (user.role !== "ADMIN") {
+    adminOnlyElements.forEach(el => el && el.classList.add("hidden"));
+  } else {
+    adminOnlyElements.forEach(el => el && el.classList.remove("hidden"));
+  }
+
+  const auditSection = document.querySelector("#auditSection");
+  if (auditSection) {
+    auditSection.classList.remove("hidden");
+  }
+
+  const searchNotice = document.querySelector("#searchNotice");
+  if (searchNotice) {
+    if (user.role === "ALUNO") searchNotice.textContent = "A busca percorre apenas os seus próprios registros.";
+    else searchNotice.textContent = "A busca percorre todos os registros cadastrados na base.";
+  }
+
   render();
 }
 
@@ -257,6 +276,13 @@ function createOccurrence(event) {
 }
 
 function deleteOccurrence(id) {
+  const session = getSession();
+  if (!session || session.role !== "ADMIN") {
+    alert("Erro de Segurança: Apenas Administradores podem excluir ocorrências.");
+    writeLog("TENTATIVA_EXCLUSAO_NEGADA", `Tentativa negada de exclusão da OC-${id}.`);
+    return;
+  }
+
   const occurrences = getOccurrences();
   const occurrence = occurrences.find((item) => item.id === id);
   const updated = occurrences.filter((item) => item.id !== id);
@@ -267,6 +293,13 @@ function deleteOccurrence(id) {
 }
 
 function changeStatus(id, status) {
+  const session = getSession();
+  if (!session || (session.role !== "ADMIN" && session.role !== "PROFESSOR")) {
+    alert("Erro de Segurança: Apenas Professores ou Administradores podem alterar o status.");
+    writeLog("TENTATIVA_ALTERACAO_STATUS_NEGADA", `Tentativa negada de alteração da OC-${id}.`);
+    return;
+  }
+
   const occurrences = getOccurrences();
   const occurrence = occurrences.find((item) => item.id === id);
 
@@ -283,14 +316,17 @@ function changeStatus(id, status) {
 }
 
 function exportEverything() {
+  const session = getSession();
+  if (!session || session.role !== "ADMIN") {
+    alert("Erro de Segurança: Apenas Administradores podem exportar dados.");
+    return;
+  }
+
   const payload = {
     exportedAt: new Date().toISOString(),
-    exportedBy: getSession(),
-    token: FAKE_API_TOKEN,
-    users: USERS,
+    exportedBy: session.email,
     occurrences: getOccurrences(),
-    audit: getAuditLogs(),
-    localStorageCopy: { ...localStorage }
+    audit: getAuditLogs()
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -301,15 +337,21 @@ function exportEverything() {
   const anchor = document.createElement("a");
 
   anchor.href = url;
-  anchor.download = "backup-completo-ocorrencias.json";
+  anchor.download = "backup-ocorrencias.json";
   anchor.click();
 
   URL.revokeObjectURL(url);
 
-  writeLog("EXPORTACAO_TOTAL", "Usuário exportou todos os dados do sistema.");
+  writeLog("EXPORTACAO_TOTAL", "Usuário exportou dados não-críticos do sistema.");
 }
 
 function clearLogs() {
+  const session = getSession();
+  if (!session || session.role !== "ADMIN") {
+    alert("Erro de Segurança: Apenas Administradores podem limpar logs.");
+    return;
+  }
+
   saveAuditLogs([]);
   render();
 }
@@ -321,48 +363,73 @@ function resetData() {
   boot();
 }
 
+function escapeHTML(str) {
+  if (!str) return "";
+  return String(str).replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+  }[tag] || tag));
+}
+
 function render() {
   const term = searchInput.value.toLowerCase();
-  const occurrences = getOccurrences();
+  let baseOccurrences = getOccurrences();
+  const session = getSession();
 
-  const filtered = occurrences.filter((item) => {
+  // ALUNO só pode visualizar as próprias ocorrências
+  if (session && session.role === "ALUNO") {
+    baseOccurrences = baseOccurrences.filter(item => item.createdBy === session.email);
+  }
+
+  const filtered = baseOccurrences.filter((item) => {
     const content = JSON.stringify(item).toLowerCase();
     return content.includes(term);
   });
 
-  totalOccurrences.textContent = occurrences.length;
-  criticalOccurrences.textContent = occurrences.filter((item) => item.priority === "Crítica").length;
+  totalOccurrences.textContent = baseOccurrences.length;
+  criticalOccurrences.textContent = baseOccurrences.filter((item) => item.priority === "Crítica").length;
   lastUpdate.textContent = `Atualizado em ${new Date().toLocaleTimeString("pt-BR")}`;
 
   occurrencesTable.innerHTML = filtered.map((item) => `
     <tr>
       <td>
-        <strong>${item.studentName}</strong><br />
-        <span class="muted-text">${item.studentId}</span>
+        <strong>${escapeHTML(item.studentName)}</strong><br />
+        <span class="muted-text">${escapeHTML(item.studentId)}</span>
       </td>
-      <td>${item.studentCpf}</td>
+      <td>${escapeHTML(item.studentCpf)}</td>
       <td>
-        ${item.studentEmail}<br />
-        ${item.studentPhone}
+        ${escapeHTML(item.studentEmail)}<br />
+        ${escapeHTML(item.studentPhone)}
       </td>
-      <td>${item.category}</td>
-      <td><span class="priority ${item.priority}">${item.priority}</span></td>
-      <td>${item.status}</td>
+      <td>${escapeHTML(item.category)}</td>
+      <td><span class="priority ${escapeHTML(item.priority)}">${escapeHTML(item.priority)}</span></td>
+      <td>${escapeHTML(item.status)}</td>
       <td>
-        <strong>Descrição:</strong> ${item.description}<br />
-        <strong>Obs. interna:</strong> ${item.internalNote}
+        <strong>Descrição:</strong> ${escapeHTML(item.description)}<br />
+        <strong>Obs. interna:</strong> ${session && session.role !== "ALUNO" ? escapeHTML(item.internalNote) : "<em>Acesso restrito</em>"}
       </td>
       <td>
         <div class="row-actions">
-          <button class="btn secondary" onclick="changeStatus('${item.id}', 'Em análise')">Em análise</button>
-          <button class="btn secondary" onclick="changeStatus('${item.id}', 'Resolvida')">Resolver</button>
-          <button class="btn danger" onclick="deleteOccurrence('${item.id}')">Excluir</button>
+          ${session && session.role !== "ALUNO" ? `
+            <button class="btn secondary" onclick="changeStatus('${escapeHTML(item.id)}', 'Em análise')">Em análise</button>
+            <button class="btn secondary" onclick="changeStatus('${escapeHTML(item.id)}', 'Resolvida')">Resolver</button>
+          ` : ""}
+          ${session && session.role === "ADMIN" ? `
+            <button class="btn danger" onclick="deleteOccurrence('${escapeHTML(item.id)}')">Excluir</button>
+          ` : ""}
         </div>
       </td>
     </tr>
   `).join("");
 
-  const logs = getAuditLogs();
+  let logs = getAuditLogs();
+
+  if (session && session.role !== "ADMIN") {
+    logs = logs.filter((log) => log.user === session.email);
+  }
 
   if (logs.length === 0) {
     auditLog.innerHTML = `<div class="notice">Nenhum log registrado.</div>`;
