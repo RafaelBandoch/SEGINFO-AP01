@@ -283,6 +283,10 @@ function deleteOccurrence(id) {
     return;
   }
 
+  if (!confirm(`Atenção: Tem certeza que deseja excluir a ocorrência ${id}?\nEsta ação não pode ser desfeita.`)) {
+    return;
+  }
+
   const occurrences = getOccurrences();
   const occurrence = occurrences.find((item) => item.id === id);
   const updated = occurrences.filter((item) => item.id !== id);
@@ -463,5 +467,45 @@ roleSelect.addEventListener("change", (event) => changeRole(event.target.value))
 
 window.deleteOccurrence = deleteOccurrence;
 window.changeStatus = changeStatus;
+
+// Máscaras de Input (CPF e Telefone)
+const studentCpfInput = document.querySelector("#studentCpf");
+const studentPhoneInput = document.querySelector("#studentPhone");
+
+if (studentCpfInput) {
+  studentCpfInput.addEventListener("input", (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 9) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+    }
+    
+    e.target.value = value;
+  });
+}
+
+if (studentPhoneInput) {
+  studentPhoneInput.addEventListener("input", (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 10) {
+      value = value.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{2})(\d{4})(\d{1,4})/, "($1) $2-$3");
+    } else if (value.length > 2) {
+      value = value.replace(/(\d{2})(\d{1,4})/, "($1) $2");
+    } else if (value.length > 0) {
+      value = value.replace(/(\d{1,2})/, "($1");
+    }
+    
+    e.target.value = value;
+  });
+}
 
 boot();
