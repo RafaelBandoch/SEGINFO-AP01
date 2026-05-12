@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Ocorrências Acadêmicas — versão inicial</title>
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';" />
+  <title>Sistema de Ocorrências Acadêmicas</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+ 
 <body>
   <header class="topbar">
     <div>
@@ -13,15 +16,15 @@
       <h1>Sistema de Ocorrências Acadêmicas</h1>
       <p class="subtitle">Protótipo didático em HTML, CSS e JavaScript</p>
     </div>
-
+ 
     <div class="topbar-actions">
       <span id="sessionBadge" class="badge muted">Sessão não iniciada</span>
       <button id="logoutBtn" class="btn secondary hidden">Sair</button>
     </div>
   </header>
-
+ 
   <main class="layout">
-        <section id="loginView" class="card login-card">
+    <section id="loginView" class="card login-card">
       <div>
         <p class="eyebrow">Acesso</p>
         <h2>Entrar no sistema</h2>
@@ -29,21 +32,21 @@
           Use um dos usuários de demonstração para acessar o painel.
         </p>
       </div>
-
+ 
       <form id="loginForm" class="form-grid">
         <label>
           E-mail
           <input id="email" type="email" value="professor@faculdade.local" autocomplete="email" />
         </label>
-
+ 
         <label>
           Senha
-          <input id="password" type="password" value="123456" autocomplete="current-password" />
+          <input id="password" type="password" value="123456" autocomplete="off" />
         </label>
-
+ 
         <button class="btn primary" type="submit">Entrar</button>
       </form>
-
+ 
       <div class="demo-users">
         <h3>Usuários de demonstração</h3>
         <ul>
@@ -51,16 +54,17 @@
           <li><strong>professor@faculdade.local</strong> / 123456</li>
           <li><strong>admin@faculdade.local</strong> / admin</li>
         </ul>
+ 
       </div>
     </section>
-
+ 
     <section id="appView" class="hidden">
       <section class="grid two">
         <article class="card">
           <p class="eyebrow">Usuário atual</p>
           <h2 id="currentUserName">—</h2>
           <p id="currentUserDetails" class="muted-text">—</p>
-
+ 
           <div class="role-switch">
             <label>
               Perfil ativo
@@ -72,49 +76,50 @@
             </label>
           </div>
         </article>
-
+ 
         <article class="card">
           <p class="eyebrow">Ações rápidas</p>
           <h2>Ferramentas do painel</h2>
           <div class="actions">
+ 
             <button id="exportBtn" class="btn secondary" type="button">Exportar todos os dados</button>
             <button id="clearLogsBtn" class="btn secondary" type="button">Limpar logs</button>
             <button id="resetBtn" class="btn danger" type="button">Restaurar dados iniciais</button>
           </div>
         </article>
       </section>
-
+ 
       <section class="grid two">
         <article class="card">
           <p class="eyebrow">Nova ocorrência</p>
           <h2>Registrar ocorrência acadêmica</h2>
-
+ 
           <form id="occurrenceForm" class="form-grid">
             <label>
               Nome do aluno
               <input id="studentName" type="text" placeholder="Ex.: João da Silva" />
             </label>
-
+ 
             <label>
               Matrícula
               <input id="studentId" type="text" placeholder="Ex.: 202400123" />
             </label>
-
+ 
             <label>
               CPF
               <input id="studentCpf" type="text" placeholder="Ex.: 000.000.000-00" />
             </label>
-
+ 
             <label>
               E-mail pessoal
               <input id="studentEmail" type="email" placeholder="aluno@email.com" />
             </label>
-
+ 
             <label>
               Telefone
               <input id="studentPhone" type="text" placeholder="(00) 00000-0000" />
             </label>
-
+ 
             <label>
               Tipo de ocorrência
               <select id="category">
@@ -125,7 +130,7 @@
                 <option>Outro</option>
               </select>
             </label>
-
+ 
             <label>
               Prioridade
               <select id="priority">
@@ -135,35 +140,35 @@
                 <option>Crítica</option>
               </select>
             </label>
-
+ 
             <label class="span-2">
               Descrição da ocorrência
               <textarea id="description" rows="5" placeholder="Descreva o ocorrido..."></textarea>
             </label>
-
+ 
             <label class="span-2">
               Observação interna
-              <textarea id="internalNote" rows="3" placeholder="Informação visível no painel..."></textarea>
+              <textarea id="internalNote" rows="3" placeholder="Informação visível apenas para professores e administradores."></textarea>
             </label>
-
+ 
             <label class="check span-2">
-              <input id="privacyAck" type="checkbox" />
-              Confirmo que posso registrar estes dados.
+              <input id="privacyAck" type="checkbox" required />
+              Confirmo que tenho autorização para registrar estes dados.
             </label>
-
+ 
             <button class="btn primary span-2" type="submit">Salvar ocorrência</button>
           </form>
         </article>
-
+ 
         <article class="card">
           <p class="eyebrow">Busca</p>
           <h2>Pesquisar registros</h2>
-
+ 
           <label>
             Termo de busca
             <input id="search" type="search" placeholder="Nome, matrícula, CPF, e-mail ou texto..." />
           </label>
-
+ 
           <div class="summary">
             <div>
               <strong id="totalOccurrences">0</strong>
@@ -174,13 +179,13 @@
               <span>críticas</span>
             </div>
           </div>
-
+ 
           <div class="notice" id="searchNotice">
             A busca percorre todos os campos cadastrados e todos os perfis acessam a mesma base.
           </div>
         </article>
       </section>
-
+ 
       <section class="card">
         <div class="section-header">
           <div>
@@ -189,7 +194,7 @@
           </div>
           <span id="lastUpdate" class="badge">—</span>
         </div>
-
+ 
         <div class="table-wrap">
           <table>
             <thead>
@@ -204,11 +209,12 @@
                 <th>Ações</th>
               </tr>
             </thead>
+ 
             <tbody id="occurrencesTable"></tbody>
           </table>
         </div>
       </section>
-
+ 
       <section class="card" id="auditSection">
         <div class="section-header">
           <div>
@@ -217,18 +223,16 @@
           </div>
           <span class="badge muted">armazenamento local</span>
         </div>
-
+ 
         <div id="auditLog" class="log-list"></div>
       </section>
     </section>
   </main>
-
+ 
   <footer class="footer">
-    <p>
-      Protótipo estático para atividade prática. Publicável em GitHub Pages.
-    </p>
+    <p>Protótipo estático para atividade prática. Publicável em GitHub Pages.</p>
   </footer>
-
+ 
   <script src="app.js"></script>
 </body>
 </html>
